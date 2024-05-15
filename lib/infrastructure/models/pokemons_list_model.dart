@@ -1,5 +1,3 @@
-
-
 class PokemonsListModel {
   final List<Result>? results;
 
@@ -19,7 +17,7 @@ class PokemonsListModel {
 class Result {
   final String? name;
   final String? url;
-  final String? pokemonId;
+  final int? pokemonId;
   final String? imageUrl;
 
   Result({
@@ -32,13 +30,14 @@ class Result {
   factory Result.fromJson(Map<String, dynamic> json) {
     final String link = json["url"];
     final String pokemonId = link.split('/').reversed.skip(1).first;
+    final int pokemonNumId = int.parse(pokemonId);
     final String imageUrl =
         'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$pokemonId.png';
 
     return Result(
       name: json["name"],
       url: json["url"],
-      pokemonId: pokemonId,
+      pokemonId: pokemonNumId,
       imageUrl: imageUrl,
     );
   }

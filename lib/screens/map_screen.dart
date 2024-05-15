@@ -9,10 +9,10 @@ import 'package:mapbox_pratice/infrastructure/service/map_service.dart';
 import '../infrastructure/providers/dark_mode_provider.dart';
 import 'widgets/search_bar_widget.dart';
 
-const LatLng location_one = LatLng(10.064180, -69.112870);
-const LatLng location_two = LatLng(10.074226, -69.118257);
-const LatLng location_three = LatLng(10.076927, -69.131499);
-const LatLng location_four = LatLng(10.090980, -69.124409);
+const LatLng locationOne = LatLng(10.064180, -69.112870);
+const LatLng locationTwo = LatLng(10.074226, -69.118257);
+const LatLng locationThree = LatLng(10.076927, -69.131499);
+const LatLng locationFour = LatLng(10.090980, -69.124409);
 
 class MapScreen extends ConsumerWidget {
   const MapScreen({
@@ -48,19 +48,13 @@ class _Body extends ConsumerWidget {
     final pokemonData = ref.watch(dataPokemonProvider);
     final isDarkMode = ref.watch(isDarkModeProvider);
 
-    // final List<LatLng> routePoints = [
-    //   location_one,
-    //   location_two,
-    //   location_three,
-    //   location_four,
-    // ];
-
     if (pokemonData.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final pokemonImage = pokemonData.pokemon!.results?.first.imageUrl;
-    final pokemonName = pokemonData.pokemon!.results?.first.name;
+    final pokemonImage = pokemonData.pokemon!.results?[2].imageUrl;
+    final pokemonsList = pokemonData.pokemon?.results;
+    final pokemonName = pokemonData.pokemon!.results?[2].name;
 
     return Stack(
       children: [
@@ -69,20 +63,14 @@ class _Body extends ConsumerWidget {
             minZoom: 5,
             maxZoom: 25,
             initialZoom: 18,
-            initialCenter: location_one,
+            initialCenter: locationOne,
           ),
           children: [
             MapService.getMap(isDarkMode),
             MarkerLayer(
               markers: [
-                markerLocation(location_one, pokemonImage, pokemonName,
+                markerLocation(locationOne, pokemonImage, pokemonName,
                     isDarkMode, context, ref),
-                // markerLocation(location_two, pokemonImage, pokemonName,
-                //     isDarkMode, context),
-                // markerLocation(location_three, pokemonImage, pokemonName,
-                //     isDarkMode, context),
-                // markerLocation(location_four, pokemonImage, pokemonName,
-                //     isDarkMode, context),
               ],
             ),
           ],
@@ -95,19 +83,18 @@ class _Body extends ConsumerWidget {
 
   markerLocation(LatLng pointLocation, String? image, String? name,
       bool isDarkMode, BuildContext context, WidgetRef ref) {
-        
     final pokemonData = ref.watch(dataPokemonProvider);
     final pokemonDetailData = ref.watch(detailPokemonProvider);
-    final pokemonId = pokemonData.pokemon!.results?.first.pokemonId;
-
+    final pokemonId = pokemonData.pokemon!.results?[2].pokemonId;
 
     return Marker(
       width: 100,
       height: 100,
       point: pointLocation,
       child: GestureDetector(
-        onTap: () { 
-          bottomSheet(context, isDarkMode, ref, pokemonId);
+        onTap: () {
+          ref.read(idProvider.notifier).update((state) => pokemonId!);
+          bottomSheet(context, isDarkMode, ref, pokemonId!);
         },
         child: Column(
           children: [
@@ -134,13 +121,16 @@ class _Body extends ConsumerWidget {
     );
   }
 
-  bottomSheet(
-      BuildContext context, bool isDarkMode, WidgetRef ref, String? id) {
-    final pokemonData = ref.watch(dataPokemonProvider);
+  bottomSheet(BuildContext context, bool isDarkMode, WidgetRef ref, int id) {
+    final pokemonData = ref.watch(detailPokemonProvider);
 
-    final pokemonImage = pokemonData.pokemon!.results?.first.imageUrl;
-    final pokemonName = pokemonData.pokemon!.results?.first.name;
-    final pokemonId = pokemonData.pokemon!.results?.first.pokemonId;
+        if (pokemonData.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final pokemonImage = pokemonData.pokemon!.imageUrl;
+    final pokemonName = pokemonData.pokemon!.name;
+    final pokemonId = pokemonData.pokemon!.id;
 
     return showBottomSheet(
       context: context,

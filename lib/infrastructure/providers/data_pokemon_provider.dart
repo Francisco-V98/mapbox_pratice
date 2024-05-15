@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_pratice/infrastructure/service/pokemon_service.dart';
 import '../models/pokemons_list_model.dart';
 
-
-// provider para obtener el pokemon 
+// provider para obtener el pokemon
 final dataPokemonProvider =
     StateNotifierProvider<DataPokemonNotifier, DataPokemonState>((ref) {
   return DataPokemonNotifier();
@@ -16,8 +15,6 @@ class DataPokemonNotifier extends StateNotifier<DataPokemonState> {
   }
 
   Future<void> getDataPokemon() async {
-    // final int randomNumber = Random().nextInt(1000) + 1;
-    // final String randomNumberString = randomNumber.toString();
     state = state.copyWith(isLoading: true);
 
     try {
