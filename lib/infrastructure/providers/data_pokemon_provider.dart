@@ -1,7 +1,6 @@
-// import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_pratice/infrastructure/service/pokemon_service.dart';
-import '../models/pokemons_list_model.dart';
+import 'package:mapbox_pratice/infrastructure/models/models.dart';
+import 'package:mapbox_pratice/infrastructure/service/services.dart';
 
 // provider para obtener el pokemon
 final dataPokemonProvider =

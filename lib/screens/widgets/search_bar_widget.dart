@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_pratice/infrastructure/providers/dark_mode_provider.dart';
+import 'package:mapbox_pratice/infrastructure/providers/providers.dart';
 
 class SearchBarWidget extends ConsumerWidget {
   const SearchBarWidget({super.key});

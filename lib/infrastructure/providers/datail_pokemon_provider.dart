@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mapbox_pratice/infrastructure/models/pokemon_model.dart';
-import '../service/pokemon_service.dart';
+import 'package:mapbox_pratice/infrastructure/models/models.dart';
+import 'package:mapbox_pratice/infrastructure/service/services.dart';
 
 
 final idProvider = StateProvider<int>((ref) {

@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:mapbox_pratice/infrastructure/providers/data_pokemon_provider.dart';
-import 'package:mapbox_pratice/infrastructure/providers/datail_pokemon_provider.dart';
-import 'package:mapbox_pratice/infrastructure/service/map_service.dart';
+import 'package:mapbox_pratice/screens/widgets/widgets.dart';
+import 'package:mapbox_pratice/infrastructure/service/services.dart';
+import 'package:mapbox_pratice/infrastructure/providers/providers.dart';
 
-import '../infrastructure/providers/dark_mode_provider.dart';
-import 'widgets/search_bar_widget.dart';
 
 const LatLng locationOne = LatLng(10.064180, -69.112870);
-const LatLng locationTwo = LatLng(10.074226, -69.118257);
-const LatLng locationThree = LatLng(10.076927, -69.131499);
-const LatLng locationFour = LatLng(10.090980, -69.124409);
+
+LatLngBounds mapBounds = LatLngBounds(
+  const LatLng(10.076927, -69.131499),
+  const LatLng(10.09098, -69.124409),
+);
+
+const int idselected = 10;
 
 class MapScreen extends ConsumerWidget {
   const MapScreen({
@@ -52,9 +54,9 @@ class _Body extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final pokemonImage = pokemonData.pokemon!.results?[2].imageUrl;
+    final pokemonImage = pokemonData.pokemon!.results?[idselected].imageUrl;
     final pokemonsList = pokemonData.pokemon?.results;
-    final pokemonName = pokemonData.pokemon!.results?[2].name;
+    final pokemonName = pokemonData.pokemon!.results?[idselected].name;
 
     return Stack(
       children: [
@@ -69,14 +71,24 @@ class _Body extends ConsumerWidget {
             MapService.getMap(isDarkMode),
             MarkerLayer(
               markers: [
-                markerLocation(locationOne, pokemonImage, pokemonName,
-                    isDarkMode, context, ref),
+                markerLocation(
+                  locationOne,
+                  pokemonImage,
+                  pokemonName,
+                  isDarkMode,
+                  context,
+                  ref,
+                ),
               ],
             ),
           ],
         ),
         const Positioned(
-            top: 50, left: 20, right: 20, child: SearchBarWidget()),
+          top: 50,
+          left: 20,
+          right: 20,
+          child: SearchBarWidget(),
+        ),
       ],
     );
   }
@@ -84,8 +96,8 @@ class _Body extends ConsumerWidget {
   markerLocation(LatLng pointLocation, String? image, String? name,
       bool isDarkMode, BuildContext context, WidgetRef ref) {
     final pokemonData = ref.watch(dataPokemonProvider);
-    final pokemonDetailData = ref.watch(detailPokemonProvider);
-    final pokemonId = pokemonData.pokemon!.results?[2].pokemonId;
+    final pokemonId = pokemonData.pokemon!.results?[idselected].pokemonId;
+    
 
     return Marker(
       width: 100,
@@ -94,7 +106,7 @@ class _Body extends ConsumerWidget {
       child: GestureDetector(
         onTap: () {
           ref.read(idProvider.notifier).update((state) => pokemonId!);
-          bottomSheet(context, isDarkMode, ref, pokemonId!);
+          bottomSheet(context, isDarkMode, ref);
         },
         child: Column(
           children: [
@@ -110,6 +122,7 @@ class _Body extends ConsumerWidget {
                   name!,
                   style: TextStyle(
                     fontSize: 12,
+                    //todo helper de esto para sacar el dark mode
                     color: isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
@@ -121,13 +134,13 @@ class _Body extends ConsumerWidget {
     );
   }
 
-  bottomSheet(BuildContext context, bool isDarkMode, WidgetRef ref, int id) {
+  bottomSheet(BuildContext context, bool isDarkMode, WidgetRef ref) {
     final pokemonData = ref.watch(detailPokemonProvider);
 
-        if (pokemonData.isLoading) {
+    if (pokemonData.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-
+// todo que no sean !
     final pokemonImage = pokemonData.pokemon!.imageUrl;
     final pokemonName = pokemonData.pokemon!.name;
     final pokemonId = pokemonData.pokemon!.id;

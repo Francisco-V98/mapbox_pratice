@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
-import '../models/pokemon_model.dart';
-import '../models/pokemons_list_model.dart';
+import 'package:mapbox_pratice/infrastructure/models/models.dart';
 
 class PokemonService {
 

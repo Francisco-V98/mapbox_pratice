@@ -19,12 +19,16 @@ class Result {
   final String? url;
   final int? pokemonId;
   final String? imageUrl;
+  late final double? lat;
+  late final double? lng;
 
   Result({
     this.name,
     this.url,
     this.pokemonId,
     this.imageUrl,
+    this.lat,
+    this.lng,
   });
 
   factory Result.fromJson(Map<String, dynamic> json) {
