@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -5,16 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_pratice/screens/widgets/widgets.dart';
 import 'package:mapbox_pratice/infrastructure/service/services.dart';
 import 'package:mapbox_pratice/infrastructure/providers/providers.dart';
-
-
-const LatLng locationOne = LatLng(10.064180, -69.112870);
-
-LatLngBounds mapBounds = LatLngBounds(
-  const LatLng(10.076927, -69.131499),
-  const LatLng(10.09098, -69.124409),
-);
-
-const int idselected = 10;
 
 class MapScreen extends ConsumerWidget {
   const MapScreen({
@@ -28,19 +20,26 @@ class MapScreen extends ConsumerWidget {
     return Scaffold(
       body: const _Body(),
       floatingActionButton: FloatingActionButton(
-        backgroundColor:
-            isDarkMode ? const Color.fromARGB(255, 22, 22, 22) : Colors.white,
+        backgroundColor: getFabBackgroundColor(isDarkMode),
         onPressed: () {
-          ref.read(isDarkModeProvider.notifier).update((state) => !state);
+          toggleDarkMode(ref);
         },
         child: Icon(
-          isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-          color: isDarkMode ? Colors.white : Colors.black,
+          getIconDarkMode(isDarkMode),
+          color: getColorBlckAndWhite(isDarkMode),
         ),
       ),
     );
   }
 }
+
+const LatLng locationOne = LatLng(10.064180, -69.112870);
+
+// coordenadas del perimetro
+LatLngBounds mapBounds = LatLngBounds(
+  const LatLng(10.098259, -69.125802),
+  const LatLng(10.058619, -69.095283),
+);
 
 class _Body extends ConsumerWidget {
   const _Body();
@@ -54,32 +53,24 @@ class _Body extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final pokemonImage = pokemonData.pokemon!.results?[idselected].imageUrl;
-    final pokemonsList = pokemonData.pokemon?.results;
-    final pokemonName = pokemonData.pokemon!.results?[idselected].name;
-
     return Stack(
       children: [
         FlutterMap(
           options: const MapOptions(
             minZoom: 5,
             maxZoom: 25,
-            initialZoom: 18,
+            initialZoom: 13,
             initialCenter: locationOne,
           ),
           children: [
             MapService.getMap(isDarkMode),
             MarkerLayer(
-              markers: [
-                markerLocation(
-                  locationOne,
-                  pokemonImage,
-                  pokemonName,
-                  isDarkMode,
-                  context,
-                  ref,
-                ),
-              ],
+              markers: pokemonMarkers(
+                context,
+                ref,
+                locationOne,
+                isDarkMode,
+              ),
             ),
           ],
         ),
@@ -93,45 +84,51 @@ class _Body extends ConsumerWidget {
     );
   }
 
-  markerLocation(LatLng pointLocation, String? image, String? name,
-      bool isDarkMode, BuildContext context, WidgetRef ref) {
+  List<Marker> pokemonMarkers(BuildContext context, WidgetRef ref,
+      LatLng pointLocation, bool isDarkMode) {
     final pokemonData = ref.watch(dataPokemonProvider);
-    final pokemonId = pokemonData.pokemon!.results?[idselected].pokemonId;
-    
+    final listPokemons = pokemonData.pokemon!.results;
+    final markerPositions = ref.watch(markerPositionsProvider);
 
-    return Marker(
-      width: 100,
-      height: 100,
-      point: pointLocation,
-      child: GestureDetector(
-        onTap: () {
-          ref.read(idProvider.notifier).update((state) => pokemonId!);
-          bottomSheet(context, isDarkMode, ref);
-        },
-        child: Column(
-          children: [
-            CircleAvatar(backgroundImage: NetworkImage(image!), radius: 24),
-            Container(
-              decoration: BoxDecoration(
-                color: isDarkMode ? Colors.white24 : Colors.black26,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                child: Text(
-                  name!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    //todo helper de esto para sacar el dark mode
-                    color: isDarkMode ? Colors.white : Colors.black,
+    return listPokemons!.asMap().entries.map((entry) {
+      int index = entry.key;
+      var pokemon = entry.value;
+
+      return Marker(
+        width: 100,
+        height: 100,
+        point: markerPositions[index],
+        child: GestureDetector(
+          onTap: () {
+            passId(ref, pokemon.pokemonId!);
+            bottomSheet(context, isDarkMode, ref);
+          },
+          child: Column(
+            children: [
+              CircleAvatar(
+                  backgroundImage: NetworkImage(pokemon.imageUrl!), radius: 24),
+              Container(
+                decoration: BoxDecoration(
+                  color: getColorBlckAndWhiteOpasity(isDarkMode),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  child: Text(
+                    pokemon.name!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: getColorBlckAndWhite(isDarkMode),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }).toList();
   }
 
   bottomSheet(BuildContext context, bool isDarkMode, WidgetRef ref) {
@@ -140,59 +137,130 @@ class _Body extends ConsumerWidget {
     if (pokemonData.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-// todo que no sean !
-    final pokemonImage = pokemonData.pokemon!.imageUrl;
-    final pokemonName = pokemonData.pokemon!.name;
-    final pokemonId = pokemonData.pokemon!.id;
 
-    return showBottomSheet(
-      context: context,
-      builder: (context) {
-        return GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Container(
-            height: 400,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: isDarkMode
-                  ? const Color.fromARGB(255, 23, 23, 23)
-                  : const Color.fromARGB(255, 255, 255, 255),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    backgroundImage: NetworkImage(pokemonImage!),
-                    radius: 48,
-                  ),
-                  const SizedBox(height: 8),
-                  Column(
-                    children: [
-                      Text(
-                        'ID: $pokemonId',
-                        style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.indigo),
+    if (pokemonData.pokemon != null) {
+      final pokemonImage = pokemonData.pokemon!.imageUrl;
+      final pokemonName = pokemonData.pokemon!.name;
+      final pokemonId = pokemonData.pokemon!.id;
+
+      return showBottomSheet(
+        context: context,
+        builder: (context) {
+          return GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              height: 400,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: getFabBackgroundColor(isDarkMode),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    if (pokemonImage != null)
+                      CircleAvatar(
+                        backgroundImage: NetworkImage(pokemonImage),
+                        radius: 48,
                       ),
-                      Text(
-                        pokemonName!.toUpperCase(),
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Column(
+                      children: [
+                        if (pokemonId != null)
+                          Text(
+                            'ID: $pokemonId',
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.indigo),
+                          ),
+                        if (pokemonName != null)
+                          Text(
+                            pokemonName.toUpperCase(),
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black54),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    } else {
+      return const Center(
+          child: Text('No se pudo cargar la información del Pokémon'));
+    }
   }
 }
+
+//   bottomSheet(BuildContext context, bool isDarkMode, WidgetRef ref) {
+//     final pokemonData = ref.watch(detailPokemonProvider);
+
+//     if (pokemonData.isLoading) {
+//       return const Center(child: CircularProgressIndicator());
+//     }
+
+//     if (pokemonData.pokemon != null) {
+      
+//     }
+
+//     final pokemonImage = pokemonData.pokemon!.imageUrl;
+//     final pokemonName = pokemonData.pokemon!.name;
+//     final pokemonId = pokemonData.pokemon!.id;
+
+//     return showBottomSheet(
+//       context: context,
+//       builder: (context) {
+//         return GestureDetector(
+//           onTap: () => Navigator.of(context).pop(),
+//           child: Container(
+//             height: 400,
+//             width: double.infinity,
+//             decoration: BoxDecoration(
+//               color: getFabBackgroundColor(isDarkMode),
+//               borderRadius:
+//                   const BorderRadius.vertical(top: Radius.circular(24)),
+//             ),
+//             child: Padding(
+//               padding: const EdgeInsets.all(16),
+//               child: Column(
+//                 children: [
+//                   CircleAvatar(
+//                     backgroundImage: NetworkImage(pokemonImage!),
+//                     radius: 48,
+//                   ),
+//                   const SizedBox(height: 8),
+//                   Column(
+//                     children: [
+//                       Text(
+//                         'ID: $pokemonId',
+//                         style: const TextStyle(
+//                             fontSize: 20,
+//                             fontWeight: FontWeight.w600,
+//                             color: Colors.indigo),
+//                       ),
+//                       Text(
+//                         pokemonName!.toUpperCase(),
+//                         style: const TextStyle(
+//                             fontSize: 16,
+//                             fontWeight: FontWeight.w600,
+//                             color: Colors.black54),
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }

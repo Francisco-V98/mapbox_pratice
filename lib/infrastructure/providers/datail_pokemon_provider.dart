@@ -7,6 +7,10 @@ final idProvider = StateProvider<int>((ref) {
   return 4;
 });
 
+void passId(WidgetRef ref, int id) {
+  ref.read(idProvider.notifier).update((state) => id);
+}
+
 final detailPokemonProvider =
     StateNotifierProvider<DetailPokemonNotifier, DetailPokemonState>((ref) {
       final pokemonId = ref.watch(idProvider);
